@@ -465,16 +465,16 @@ const msmAutomatico = (phoneClient: string, to: string, client: WASocket) => {
 	}
 }
 
-app.get('/qr/:id', async (req, res) => {
-	let id = req.params.id
+app.get('/qr/:id', async (req: Request, res: Response) => {
+	let id = req.params.id as string
 	await index(id)
 	setTimeout(function () {
 		console.log(codigo)
 		res.send(codigo)
 	}, 1000)
 })
-app.get('/delete/:id', async (req, res) => {
-	let id = req.params.id
+app.get('/delete/:id', async (req: Request, res: Response) => {
+	let id = req.params.id as string
 	let id_p = id.split('-')[0]
 	let sql = `update points set  active_whatsapp_baileys = false where id_point = '${id_p}'`
 	clientDB
@@ -503,7 +503,7 @@ app.post('/send_test', async (req: Request, res: Response) => {
 
 	res.send('Función ejecutada con éxito')
 })
-app.post('/send', async (req, res) => {
+app.post('/send', async (req: Request, res: Response) => {
 	console.log('Entre al send (Confirmar Orden): ')
 	let message = ''
 	message = req.body.body
@@ -542,7 +542,7 @@ app.post('/send', async (req, res) => {
 	}
 	res.end('bien')
 })
-app.post('/send-test', async (req, res) => {
+app.post('/send-test', async (req: Request, res: Response) => {
 	let message = 'Mensaje periodico de prueba de funcionamiento de VinBot'
 	let numbers = ['573137031390@s.whatsapp.net', '573102189987@s.whatsapp.net', '573218544332@s.whatsapp.net']
 	const targetSession = sessions['165-573001405992']
@@ -564,7 +564,7 @@ app.post('/send-test', async (req, res) => {
 	}
 	res.end('bien')
 })
-app.post('/send-ms', async (req, res) => {
+app.post('/send-ms', async (req: Request, res: Response) => {
 	let message = ''
 	message = req.body.body
 	if (message != '' && sessions[req.body.id]) {
@@ -585,7 +585,7 @@ app.post('/send-ms', async (req, res) => {
 		res.end('500')
 	}
 })
-app.post('/send-ai', async (req, res) => {
+app.post('/send-ai', async (req: Request, res: Response) => {
 	let message = ''
 	message = req.body.body
 	if (message != '' && sessions[req.body.id]) {
