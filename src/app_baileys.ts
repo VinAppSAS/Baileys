@@ -474,18 +474,29 @@ app.get('/qr/:id', async (req: Request, res: Response) => {
 	}, 1000)
 })
 app.get('/delete/:id', async (req: Request, res: Response) => {
-	let id = req.params.id as string
-	let id_p = id.split('-')[0]
-	let sql = `update points set  active_whatsapp_baileys = false where id_point = '${id_p}'`
-	clientDB
-		.query(sql)
-		.then((res: QueryResult) => {
-			console.log('se actualizo false:' + id)
+	try {
+		let id = req.params.id as string
+		let id_p = id.split('-')[0]
+		let sql = `update points set  active_whatsapp_baileys = false where id_point = '${id_p}'`
+
+		await clientDB.query(sql)
+		console.log('se actualizo false:' + id)
+
+		await fsExtra.remove(`baileys_auth_info-${id}`)
+		console.log('sesión eliminada:' + id)
+
+		res.status(200).json({
+			success: true,
+			message: 'Sesión eliminada correctamente',
+			id: id
 		})
-		.catch((e: any) => {
-			//console.log('Error');
+	} catch (error) {
+		console.error('Error al eliminar sesión:', error)
+		res.status(500).json({
+			success: false,
+			error: 'Error al eliminar la sesión'
 		})
-	await fsExtra.remove(`baileys_auth_info-${id}`)
+	}
 })
 //Osk. Le cambie el nombre  de send a send_test, por que hay dos rutas que se llaman igual, linea 403
 app.post('/send_test', async (req: Request, res: Response) => {
