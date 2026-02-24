@@ -11,11 +11,17 @@ import MAIN_LOGGER from './Utils/logger.js'
 import express, { type Request, type Response } from 'express'
 import cors from 'cors'
 import https from 'https'
+import http from 'http'
 import moment from 'moment'
 import socketIOClient from 'socket.io-client'
 import { Pool, type QueryResult } from 'pg'
 import fs from 'fs'
 import { createRequire } from 'module'
+import dotenv from 'dotenv'
+
+// Load environment variables
+dotenv.config()
+
 const require = createRequire(import.meta.url)
 // @ts-ignore
 const BotController = require('./app/controllers/BotController.cjs')
@@ -24,13 +30,20 @@ const controllers: { bot: any } = {
 }
 var app = express()
 const router = express.Router()
-const port = 3001
+const port = process.env.PORT ? parseInt(process.env.PORT) : 3001
+const isLocal = process.env.NODE_ENV === 'local'
 let sessions: Record<string, WASocket> = {}
 let codigo: string | undefined
 
-const certificate = {
-	key: fs.readFileSync('./privkey.pem'),
-	cert: fs.readFileSync('./cert.pem')
+// SSL configuration - only load certificates if not in local environment
+let certificate: { key: Buffer; cert: Buffer } | undefined
+if (!isLocal) {
+	const keyPath = process.env.SSL_KEY_PATH || './privkey.pem'
+	const certPath = process.env.SSL_CERT_PATH || './cert.pem'
+	certificate = {
+		key: fs.readFileSync(keyPath),
+		cert: fs.readFileSync(certPath)
+	}
 }
 const dataClient = {
 	user: 'app',
@@ -56,12 +69,21 @@ socket.on('connect', () => {
 const logger = MAIN_LOGGER.child({})
 logger.level = 'trace'
 
-const serverHttps = https.createServer(certificate, app).listen(port, () => {
-	console.log(`Example app listening at http://localhost:${port}`)
-	connection()
-})
-serverHttps.on('error', error => {
-	console.error('Error en el servidor HTTPS:', error)
+// Create server based on environment
+let server: http.Server | https.Server
+if (isLocal) {
+	server = http.createServer(app).listen(port, () => {
+		console.log(`Server listening at http://localhost:${port} (Local mode)`)
+		connection()
+	})
+} else {
+	server = https.createServer(certificate!, app).listen(port, () => {
+		console.log(`Server listening at https://localhost:${port} (Production mode)`)
+		connection()
+	})
+}
+server.on('error', error => {
+	console.error('Error en el servidor:', error)
 })
 /*app.listen(port, () => {
 	console.log(`Server running at http://localhost:${port}/`);
